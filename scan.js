@@ -1,59 +1,56 @@
 const tg = window.Telegram?.WebApp;
 const startButton = document.getElementById("startButton");
-const stopButton = document.getElementById("stopButton");
+const closeButton = document.getElementById("closeButton");
 const manualSubmit = document.getElementById("manualSubmit");
 const manualInput = document.getElementById("manualInput");
 const statusNode = document.getElementById("status");
 const titleNode = document.getElementById("title");
 const descriptionNode = document.getElementById("description");
 const manualLabelNode = document.getElementById("manualLabel");
-const video = document.getElementById("video");
 
 const dictionary = {
   ru: {
     title: "Сканируйте QR код",
-    description: "Наведите камеру на QR код фискального чека или вставьте ссылку вручную.",
-    start: "Включить камеру",
-    stop: "Остановить камеру",
+    description:
+      "Откройте встроенный сканер Telegram или вставьте ссылку на чек вручную.",
+    start: "Открыть сканер Telegram",
+    close: "Закрыть",
     manualLabel: "Вставьте QR ссылку вручную",
     manualSubmit: "Отправить",
-    ready: "Готово к запуску камеры.",
-    opening: "Запрашиваем доступ к камере...",
+    ready: "Готово к запуску встроенного сканера.",
+    opening: "Открываем встроенный сканер Telegram...",
     unsupported:
-      "В этом WebView автоматическое распознавание QR может быть недоступно. Можно вставить ссылку вручную.",
-    active: "Камера включена. Наведите её на QR код чека.",
+      "В этом клиенте встроенный сканер Telegram недоступен. Можно вставить ссылку вручную.",
     processing: "Чек обрабатывается...",
     success: "QR отправлен. Возвращаем вас в бот...",
     failure: "Не удалось отправить QR. Попробуйте ещё раз.",
     invalid: "Нужна ссылка вида https://ofd.soliq.uz/check?...",
-    noUser: "Не удалось определить пользователя Telegram.",
-    noCamera: "Не удалось получить доступ к камере.",
+    sendUnavailable:
+      "Не удалось вернуть данные боту через sendData. Откройте Mini App из клавиатуры Telegram.",
+    closed: "Сканер закрыт. Можно открыть его снова или вставить ссылку вручную.",
   },
   uz: {
     title: "QR kodni skaner qiling",
     description:
-      "Kamerani fiskal chekdagi QR kodga tuting yoki havolani qo'lda joylang.",
-    start: "Kamerani yoqish",
-    stop: "Kamerani to'xtatish",
+      "Telegram ichidagi skanerni oching yoki chek havolasini qo'lda joylang.",
+    start: "Telegram skanerini ochish",
+    close: "Yopish",
     manualLabel: "QR havolani qo'lda kiriting",
     manualSubmit: "Yuborish",
-    ready: "Kamerani ishga tushirishga tayyor.",
-    opening: "Kameraga ruxsat so'ralmoqda...",
+    ready: "Ichki skanerni ishga tushirishga tayyor.",
+    opening: "Telegram ichki skaneri ochilmoqda...",
     unsupported:
-      "Bu WebView ichida avtomatik QR o'qish ishlamasligi mumkin. Havolani qo'lda yuborish mumkin.",
-    active: "Kamera yoqildi. Uni chekdagi QR kodga qarating.",
+      "Bu Telegram klientida ichki skaner ishlamayapti. Havolani qo'lda yuborish mumkin.",
     processing: "Chek qayta ishlanmoqda...",
     success: "QR yuborildi. Sizni botga qaytaryapmiz...",
     failure: "QR yuborilmadi. Qayta urinib ko'ring.",
     invalid: "https://ofd.soliq.uz/check?... ko'rinishidagi havola kerak.",
-    noUser: "Telegram foydalanuvchisini aniqlab bo'lmadi.",
-    noCamera: "Kameraga kirish olinmadi.",
+    sendUnavailable:
+      "sendData orqali botga ma'lumot yuborib bo'lmadi. Mini App ni Telegram klaviaturasidan oching.",
+    closed: "Skaner yopildi. Uni qayta ochish yoki havolani qo'lda yuborish mumkin.",
   },
 };
 
-let stream = null;
-let detector = null;
-let animationFrameId = null;
 let isSubmitting = false;
 
 const language = tg?.initDataUnsafe?.user?.language_code?.toLowerCase().startsWith("uz")
@@ -68,7 +65,7 @@ tg?.ready();
 tg?.expand();
 
 startButton.addEventListener("click", startScanner);
-stopButton.addEventListener("click", stopScanner);
+closeButton.addEventListener("click", () => tg?.close());
 manualSubmit.addEventListener("click", () => {
   void submitQr(manualInput.value.trim());
 });
@@ -77,67 +74,30 @@ async function startScanner() {
   setStatus(copy.opening);
 
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: "environment" },
-      },
-      audio: false,
-    });
+    if (typeof tg?.showScanQrPopup === "function") {
+      tg.showScanQrPopup({ text: copy.description.slice(0, 64) }, (data) => {
+        if (!data) {
+          return false;
+        }
 
-    video.srcObject = stream;
-    startButton.disabled = true;
-    stopButton.disabled = false;
+        if (!data.startsWith("https://ofd.soliq.uz/check")) {
+          setStatus(copy.invalid, true);
+          return false;
+        }
 
-    if ("BarcodeDetector" in window) {
-      detector = new window.BarcodeDetector({ formats: ["qr_code"] });
-      setStatus(copy.active);
-      tick();
+        void submitQr(data);
+        return true;
+      });
+
+      tg.onEvent?.("scanQrPopupClosed", handleScanClosed);
       return;
     }
 
     setStatus(copy.unsupported);
   } catch (error) {
     console.error(error);
-    setStatus(copy.noCamera, true);
+    setStatus(copy.unsupported, true);
   }
-}
-
-function stopScanner() {
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
-  }
-
-  if (stream) {
-    stream.getTracks().forEach((track) => track.stop());
-    stream = null;
-  }
-
-  video.srcObject = null;
-  startButton.disabled = false;
-  stopButton.disabled = true;
-  setStatus(copy.ready);
-}
-
-async function tick() {
-  if (!detector || !video.videoWidth || isSubmitting) {
-    animationFrameId = requestAnimationFrame(tick);
-    return;
-  }
-
-  try {
-    const barcodes = await detector.detect(video);
-    const qr = barcodes.find((item) => typeof item.rawValue === "string" && item.rawValue);
-
-    if (qr?.rawValue) {
-      void submitQr(qr.rawValue);
-      return;
-    }
-  } catch (error) {
-    console.error(error);
-  }
-
-  animationFrameId = requestAnimationFrame(tick);
 }
 
 async function submitQr(rawValue) {
@@ -150,32 +110,21 @@ async function submitQr(rawValue) {
     return;
   }
 
-  const telegramId = tg?.initDataUnsafe?.user?.id;
-
-  if (!telegramId) {
-    setStatus(copy.noUser, true);
-    return;
-  }
-
   isSubmitting = true;
-  stopScanner();
+  tg?.closeScanQrPopup?.();
   setStatus(copy.processing);
 
   try {
-    const response = await fetch(`${window.location.origin}/api/scan`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        qrUrl: rawValue,
-        telegramId,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Scan request failed with status ${response.status}`);
+    if (typeof tg?.sendData !== "function") {
+      throw new Error("sendData is not available");
     }
+
+    tg.sendData(
+      JSON.stringify({
+        type: "scan_qr",
+        qrUrl: rawValue,
+      }),
+    );
 
     setStatus(copy.success);
     tg?.HapticFeedback?.notificationOccurred("success");
@@ -183,7 +132,7 @@ async function submitQr(rawValue) {
   } catch (error) {
     console.error(error);
     isSubmitting = false;
-    setStatus(copy.failure, true);
+    setStatus(copy.sendUnavailable, true);
   }
 }
 
@@ -198,6 +147,12 @@ function applyLanguage() {
   manualLabelNode.textContent = copy.manualLabel;
   manualSubmit.textContent = copy.manualSubmit;
   startButton.textContent = copy.start;
-  stopButton.textContent = copy.stop;
+  closeButton.textContent = copy.close;
   manualInput.placeholder = "https://ofd.soliq.uz/check?t=...";
+}
+
+function handleScanClosed() {
+  if (!isSubmitting) {
+    setStatus(copy.closed);
+  }
 }
