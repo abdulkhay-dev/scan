@@ -1,7 +1,7 @@
 const DEFAULT_LANGUAGE = "ru";
 const SUPPORTED_LANGUAGES = new Set(["ru", "uz"]);
 
-export async function createI18n(language) {
+export async function createI18n(language = 'ru') {
   const normalizedLanguage = SUPPORTED_LANGUAGES.has(language) ? language : DEFAULT_LANGUAGE;
   const primaryDictionary = await loadDictionary(normalizedLanguage);
   const fallbackDictionary =
