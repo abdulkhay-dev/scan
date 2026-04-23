@@ -16,13 +16,9 @@ export async function createI18n(language = 'ru') {
 }
 
 async function loadDictionary(language) {
-  const response = await fetch(`locales/${language}`);
+ 
 
-  if (!response.ok) {
-    throw new Error(`Failed to load locale "${language}"`);
-  }
-
-  return response.json();
+  return {};
 }
 
 function getValue(dictionary, key) {
