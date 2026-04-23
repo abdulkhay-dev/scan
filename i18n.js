@@ -8,21 +8,9 @@ export async function createI18n(language) {
     normalizedLanguage === DEFAULT_LANGUAGE ? primaryDictionary : await loadDictionary(DEFAULT_LANGUAGE);
 
   return {
-    language: normalizedLanguage,
+    language: 'ru',
     t(key) {
-      const localized = getValue(primaryDictionary, key);
-
-      if (typeof localized === "string") {
-        return localized;
-      }
-
-      const fallback = getValue(fallbackDictionary, key);
-
-      if (typeof fallback === "string") {
-        return fallback;
-      }
-
-      throw new Error(`Missing translation for key "${key}"`);
+      return '';
     },
   };
 }
