@@ -3,38 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>QR Scan</title>
-    <link rel="stylesheet" href="scan.css" />
+    <title>Olma Bot</title>
+    <link rel="stylesheet" href="assets/scan.css" />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
   </head>
   <body>
     <main class="app">
       <section class="panel">
         <p class="eyebrow" id="eyebrow">Olma Bot</p>
-        <h1 id="title">QR kodni skaner qiling</h1>
-        <p class="description" id="description">
-          Fiskal chekdagi QR kodni kameraga tuting yoki havolani qo'lda joylang.
-        </p>
+        <h1 id="title"></h1>
+        <p class="description" id="description"></p>
 
         <div class="actions">
-          <button id="startButton" class="primary">Kamerani yoqish</button>
-          <button id="closeButton" class="secondary">Yopish</button>
+          <button id="startButton" class="primary"></button>
+          <button id="closeButton" class="secondary"></button>
         </div>
 
         <div class="manual">
-          <label for="manualInput" id="manualLabel">QR havolani qo'lda kiriting</label>
-          <textarea
-            id="manualInput"
-            rows="3"
-            placeholder="https://ofd.soliq.uz/check?t=..."
-          ></textarea>
-          <button id="manualSubmit" class="secondary">Yuborish</button>
+          <label for="manualInput" id="manualLabel"></label>
+          <textarea id="manualInput" rows="3"></textarea>
+          <button id="manualSubmit" class="secondary"></button>
         </div>
 
-        <p class="status" id="status">Kamerani ishga tushirishga tayyor.</p>
+        <p class="status" id="status"></p>
       </section>
     </main>
 
-    <script type="module" src="scan.js"></script>
+    <script type="module" src="assets/scan.js?v=2"></script>
   </body>
 </html>
