@@ -10,6 +10,24 @@
   <body>
     <main class="app">
       <img src="Olma_RGB_vector.svg">
+           <section class="panel" style="display: none">
+        <p class="eyebrow" id="eyebrow">Olma Bot</p>
+        <h1 id="title"></h1>
+        <p class="description" id="description"></p>
+
+        <div class="actions">
+          <button id="startButton" class="primary"></button>
+          <button id="closeButton" class="secondary"></button>
+        </div>
+
+        <div class="manual">
+          <label for="manualInput" id="manualLabel"></label>
+          <textarea id="manualInput" rows="3"></textarea>
+          <button id="manualSubmit" class="secondary"></button>
+        </div>
+
+        <p class="status" id="status"></p>
+      </section>
     </main>
 
     <script type="module" src="scan.js?v=2"></script>
